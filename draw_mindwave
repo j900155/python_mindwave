@@ -1,0 +1,144 @@
+import time
+import bluetooth
+import serial
+from mindwavemobile.MindwaveDataPoints import RawDataPoint
+from mindwavemobile.MindwaveDataPointReader import MindwaveDataPointReader
+import textwrap
+import matplotlib.pyplot as plt
+import numpy as np
+
+colors = ['b', 'c', 'y', 'm', 'r']
+# You probably won't need this if you're embedding things in a tkinter plot...
+plt.ion()
+x=0
+fig = plt.figure()
+ax = fig.add_subplot(111)
+#ser = serial.Serial('COM11', 9600)  ## 9600 is your baud rate
+
+
+
+"""
+Meditation Level: 0
+Attention Level: 0
+EEG Powers:
+                delta: 1682408
+                theta: 15655
+                lowAlpha: 72844
+                highAlpha: 48227
+                lowBeta: 21979
+                highBeta: 15213
+                lowGamma: 39352
+                midGamma: 8628
+                
+Poor Signal Level: 55
+"""
+open_sill=close_sill=4
+state=0
+aa=10
+t=""
+meditation=attention=Poor=0
+x=midGamma_y=theta_y=lowGamma_y=highBeta_y=lowBeta_y=highAlpha_y=lowAlpha_y=delta_y=0
+xx=1
+if __name__ == '__main__':
+    mindwaveDataPointReader = MindwaveDataPointReader()
+    mindwaveDataPointReader.start()
+    if (mindwaveDataPointReader.isConnected()):    
+        while(True):
+            dataPoint = mindwaveDataPointReader.readNextDataPoint()
+            if (not dataPoint.__class__ is RawDataPoint):
+                t=dataPoint.__str__()
+                if (t[0]=='M'):
+                    meditation=dataPoint.meditationValue
+                  #  print dataPoint.meditationValue
+                elif (t[0]=='A'):
+                    attention=dataPoint.attentionValue
+                  #  print dataPoint.attentionValue
+                elif (t[0]=='P'):
+                    aa-=1
+                    Poor=dataPoint.amountOfNoise
+                    if(Poor>75):
+                        print "Poor Signal"
+                        open_sill=close_sill=2
+                    else :
+                        if (attention>=75):
+                            print ("Attention:%d",attention)
+                        elif (attention<=25) :
+                            print ("Inattention:%d",attention)
+                        else :
+                            print ("Medium attention:%d",attention)
+
+                        
+                        if (meditation>=75):
+                            print ("Meditation:%d",meditation)
+                            open_sill=2
+                            if (close_sill<=0):
+                                ser.write('0')
+                            else :
+                                close_sill-=1
+                        elif ((meditation<=35 and meditation>0) or (attention>=75)) :
+                            print ("Impatient:%d",meditation)
+                            close_sill=2
+                            if (open_sill<=0):
+                                ser.write('1')
+                            else :
+                                open_sill-=1
+                        else :
+                            open_sill=close_sill=2
+                            print ("Medium Meditation:%d",meditation)
+                        
+                   # print dataPoint.amountOfNoise
+                elif (t[0]=='E' and aa<=0):
+                    
+                  #  next_delta_y=dataPoint.delta
+                  #  plt.plot([x,x+1],[delta_y,next_delta_y],label="$Delta$",color="red")
+                  
+                   # delta_y=next_delta_y
+                 #   print dataPoint.delta
+                
+
+                    
+    
+                  #  next_theta_y = dataPoint.theta
+                   # plt.plot([x,x+1],[theta_y,next_theta_y],label="$Theta$",color="g")
+                  #  theta_y=next_theta_y
+                 #   print dataPoint.theta
+                    
+                    next_lowAlpha_y = dataPoint.lowAlpha
+                    plt.plot([x,x+1],[lowAlpha_y,next_lowAlpha_y],label="$lowAlpha$",color="g")
+                   # lowAlpha_y=next_lowAlpha_y
+                 #   print dataPoint.lowAlpha
+                    lowAlpha_y=next_lowAlpha_y
+                 #   lowAlpha_y=next_highAlpha_y = dataPoint.highAlpha
+                  #  plt.plot([xx,xx+1],[next_lowAlpha_y,next_highAlpha_y],label="$highAlpha$",color="g")
+                #    highAlpha_y=next_highAlpha_y
+                  #  print dataPoint.highAlpha
+                    
+                    next_lowBeta_y = dataPoint.lowBeta
+                    plt.plot([x,x+1],[lowBeta_y,next_lowBeta_y],label="$lowBeta_$",color="b")
+                #    lowBeta_y=next_lowBeta_y
+                 #   print dataPoint.lowBeta
+                    lowBeta_y=next_lowBeta_y
+                    #lowBeta_y=next_highBeta_y = dataPoint.highBeta
+               #     plt.plot([xx,xx+1],[next_lowBeta_y,next_highBeta_y],label="$highBeta_$",color="b")
+                  #  highBeta_y=next_highBeta_y
+                 #   print dataPoint.highBeta
+                    
+                    next_lowGamma_y = dataPoint.lowGamma
+                    plt.plot([x,x+1],[lowGamma_y,next_lowGamma_y],label="$lowGamma_$",color="red")
+                #    theta_y=next_theta_y
+                  #  print dataPoint.lowGamma
+                    lowGamma_y=next_lowGamma_y
+                   # lowGamma_y=next_midGamma_y = dataPoint.midGamma
+                 #   plt.plot([xx,xx+1],[next_lowGamma_y,next_midGamma_y],label="$midGamma_$",color="red")
+                  #  midGamma_y=next_midGamma_y
+                   # print dataPoint.midGamma                   
+                    fig.canvas.draw()  
+                    x=x+1
+                   # xx=x+1
+               # print dataPoint.__str__()
+    else:
+        print(textwrap.dedent("""\
+            Exiting because the program could not connect
+            to the Mindwave Mobile device.""").replace("\n", " "))
+ser.close()  
+        
